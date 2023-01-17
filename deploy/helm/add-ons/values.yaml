@@ -1,0 +1,84 @@
+ingress-nginx:
+  enabled: true
+  controller:
+    service:
+      annotations:
+        service.beta.kubernetes.io/azure-load-balancer-health-probe-request-path: /healthz
+kube-prometheus-stack:
+  enabled: true
+  additionalPrometheusRulesMap:
+    rule-name:
+      groups:
+      - name: 9spokes-cpu-alert
+        rules:
+        - alert: 9spokes-cpu-alert
+          expr: |-
+            (sum(rate(container_cpu_usage_seconds_total{container!~"POD|"}[1m])) by (namespace,pod) * 100) >= 80 
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: Prometheus triggered high cpu load pod
+            description: Pod {{$labels.pod}} in {{$labels.namespace}} reached high cpu load in 1m
+  prometheus:
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-secret: basic-auth
+        nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - foo'
+      hosts:
+      - hansonli.mooo.com
+      paths:
+      - /
+  alertmanager:
+    config:
+      route:
+        group_by: ['namespace']
+        group_wait: 30s
+        group_interval: 5m
+        repeat_interval: 12h
+        receiver: 'null'
+        routes:
+        - receiver: 'teams'
+          matchers:
+            - alertname =~ "9spokes-cpu-alert"
+      receivers:
+      - name: 'null'
+      - name: 'teams'
+        webhook_configs:
+        - url: "https://9spokes.webhook.office.com/webhookb2/42d60780-c647-4a13-867d-0a273bff104b@2abcc5bb-97a6-431e-aa58-27c540baed73/IncomingWebhook/6200cfc5fd3744cf9838be6cb70194f3/ef4e28f0-b9f1-4169-8320-2a70d372596c"
+          send_resolved: true
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-secret: basic-auth
+        nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - foo'
+      hosts:
+      - hansonli.mooo.com
+      paths:
+      - /aler(/|$)(.*)
+      alertmanagerSpec:
+        externalUrl: "http://hansonli.mooo.com/aler/"
+  grafana:
+    ingress:
+      enabled: true
+      ingressClassName: nginx
+      annotations:
+        nginx.ingress.kubernetes.io/use-regex: "true"
+        nginx.ingress.kubernetes.io/rewrite-target: /$2
+        nginx.ingress.kubernetes.io/auth-type: basic
+        nginx.ingress.kubernetes.io/auth-secret: basic-auth
+        nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - foo'
+      hosts:
+      - hansonli.mooo.com
+      path: /graf(/|$)(.*)
+    grafana.ini:
+      server:
+        root_url: "http://hansonli.mooo.com/graf/"
+        serve_from_sub_path: true

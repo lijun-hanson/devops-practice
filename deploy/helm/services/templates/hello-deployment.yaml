@@ -1,0 +1,38 @@
+{{- if .Values.hello.enabled -}}
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.hello.name }}
+  namespace: {{ .Values.hello.namespace }}
+  labels:
+    {{- toYaml .Values.hello.labels | nindent 4}}
+spec:
+  replicas: {{ .Values.hello.replicaCount }}
+  selector:
+    matchLabels:
+      {{- toYaml .Values.hello.labels | nindent 6}}
+  template:
+    metadata:
+      labels:
+        {{- toYaml .Values.hello.labels | nindent 8}}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-{{ .Values.hello.name }}
+          image: "{{ .Values.hello.image.repository }}:{{ .Values.hello.image.tag }}"
+          imagePullPolicy: {{ .Values.hello.image.pullPolicy }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.hello.containerPort }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+          resources:
+            {{- toYaml .Values.hello.resources | nindent 12 }}
+{{- end -}}

@@ -1,0 +1,21 @@
+{{- if .Values.p3.enabled -}}
+---
+apiVersion: v1
+kind: Pod
+metadata:
+ name: p3
+ namespace: staging
+spec:
+ initContainers:
+ - name: p3-init
+   image: docker.io/docker:dind
+   command: ['docker', 'run', 'image1', 'ls', '/app/ready.txt', '||', 'docker', 'run', 'image2', 'ls', '/app/ready.txt']
+   securityContext:
+     privileged: true
+     runAsUser: 0
+ containers:
+ - name: p3-1
+   image: image1
+ - name: p3-2
+   image: image2
+{{- end -}}

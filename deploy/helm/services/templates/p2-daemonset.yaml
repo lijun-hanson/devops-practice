@@ -1,0 +1,25 @@
+{{- if .Values.p2.enabled -}}
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: {{ .Release.Name }}-{{ .Values.p2.name }}
+  namespace: {{ .Values.p2.namespace }}
+  labels:
+    {{- toYaml .Values.p2.labels | nindent 4}}
+spec:
+  selector:
+    matchLabels:
+      {{- toYaml .Values.p2.labels | nindent 6}}
+  template:
+    metadata:
+      labels:
+        {{- toYaml .Values.p2.labels | nindent 8}}
+    spec:
+      containers:
+        - name: {{ .Release.Name }}-{{ .Values.p2.name }}
+          image: "{{ .Values.p2.image.repository }}:{{ .Values.p2.image.tag }}"
+          imagePullPolicy: {{ .Values.p2.image.pullPolicy }}
+          resources:
+            {{- toYaml .Values.p2.resources | nindent 12 }}
+{{- end -}}
